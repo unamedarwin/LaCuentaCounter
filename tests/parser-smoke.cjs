@@ -24,9 +24,14 @@ const payload = { p: 'LCC1', v: 1, g: 'parser-smoke', t: 'Taula', e: '2026-01-01
   { n: 'C', s: 900, d: 0, b: 900, k: 1 }
 ] };
 const encoded = context.LCC.toBase64Url(JSON.stringify(payload));
+const compact = context.LCC.compactResultPayload(payload);
+const compactEncoded = context.LCC.toBase64Url(JSON.stringify(compact));
 
 assert.equal(context.LCC.parseResultText(`LCC1:${encoded}`).r, 2);
+const compactParsed = context.LCC.parseResultText(`LCC1:${compactEncoded}`);
+assert.equal(compactParsed.r, 2);
+assert.equal(compactParsed.a[0].d, 900);
 assert.equal(context.LCC.parseResultText(`https://example.test/tournament.html#import=${encoded}`).a[0].b, 0);
 assert.equal(context.LCC.parseResultText(`https://example.test/tournament.html?import=${encoded}`).g, 'parser-smoke');
 assert.throws(() => context.LCC.parseResultText('https://example.test/tournament.html'), /no conté cap resultat importable/);
-console.log('LCC1 raw, hash URL and query URL parsing: ok');
+console.log('LCC1 compact/raw, hash URL and query URL parsing: ok');

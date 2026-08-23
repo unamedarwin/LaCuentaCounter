@@ -7,7 +7,8 @@ const payload = { p: 'LCC1', v: 1, g: 'game-smoke', t: 'Taula', e: '2026-01-01T0
   { n: 'Pep', s: 900, d: 0, b: 900, k: 1 },
   { n: 'Joana', s: 900, d: 0, b: 900, k: 1 }
 ] };
-const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+const compact = [payload.v, payload.g, payload.t, payload.e, payload.r, payload.a.map(player => [player.n, player.s, player.b, player.k, ...(player.c === undefined ? [] : [player.c])])];
+const encoded = Buffer.from(JSON.stringify(compact)).toString('base64url');
 const value = `LCC1:${encoded}`;
 const qr = qrcode(0, 'M');
 qr.addData(value);
@@ -32,8 +33,9 @@ for (let row = 0; row < modules; row += 1) {
 const decoded = jsQR(pixels, size, size, { inversionAttempts: 'attemptBoth' });
 assert.equal(decoded?.data, value);
 const decodedPayload = JSON.parse(Buffer.from(decoded.data.slice(5), 'base64url').toString());
-assert.deepEqual(decodedPayload.a.map(player => player.n), ['Pep', 'Pep', 'Joana']);
-assert.equal(decodedPayload.a[0].b, -50);
-const shareUrl = `https://example.test/tournament.html#import=${encoded}`;
-assert.equal(new URLSearchParams(new URL(shareUrl).hash.slice(1)).get('import'), encoded);
+assert.deepEqual(decodedPayload[5].map(player => player[0]), ['Pep', 'Pep', 'Joana']);
+assert.equal(decodedPayload[5][0][2], -50);
+const fullEncoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+const shareUrl = `https://example.test/tournament.html#import=${fullEncoded}`;
+assert.equal(new URLSearchParams(new URL(shareUrl).hash.slice(1)).get('import'), fullEncoded);
 console.log('QR generation/decoding round-trip: ok');
