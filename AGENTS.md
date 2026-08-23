@@ -12,4 +12,5 @@
 - No eliminis resultats quan s’apliquin descartes: marca’ls com a no computables i conserva sempre el registre original. Mantén la configuració de rondes i places de taula dins la còpia JSON.
 - Admet noms idèntics en una mateixa partida sense alterar-los al QR. Diferencia'ls visualment a la taula i, al torneig, crea sufixos per a identitats noves i exigeix una tria explícita davant múltiples coincidències.
 - En canviar els fitxers estàtics, incrementa la versió de memòria cau a `sw.js` per evitar que una instal·lació conservi recursos antics.
+- Abans de donar una publicació per acabada, comprova amb HTTP públic que tots els recursos de `APP_FILES`, especialment `vendor/qrcode.js`, `vendor/jsQR.js` i les quatre icones, responguin `200`.
 - Valida com a mínim la sintaxi JavaScript, el manifest, el registre d’una ronda, `tests/qr-smoke.cjs`, `tests/parser-smoke.cjs` i la importació d’un resultat al torneig.

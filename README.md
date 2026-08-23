@@ -32,6 +32,8 @@ Les proves mínimes del QR i del lector es poden executar amb `node tests/qr-smo
 
 Publica directament els fitxers de la branca escollida des de **Settings → Pages → Deploy from a branch**. No cal GitHub Actions. Les rutes són relatives i funcionen també si el projecte es publica sota `/nom-del-repositori/`.
 
+La publicació ha d’incloure també les carpetes `vendor/` i `icons/`. Sense `vendor/qrcode.js` no es pot generar el QR; sense les icones, el manifest i la instal·lació PWA queden incomplets.
+
 ## Privadesa
 
 Els noms, la partida en curs i el torneig complet —configuració, rondes, places de taula, resultats i identitats— es desen a `localStorage` del dispositiu. Tancar o actualitzar la PWA no esborra aquestes dades. Quan el navegador ho permet, l’aplicació sol·licita emmagatzematge persistent. L’exportació JSON permet conservar una còpia externa davant una neteja manual del navegador o del sistema operatiu.
