@@ -2,7 +2,12 @@ const assert = require('node:assert/strict');
 const qrcode = require('../vendor/qrcode.js');
 const jsQR = require('../vendor/jsQR.js');
 
-const value = 'https://example.test/tournament.html#import=eyJwIjoiTENDMSJ9';
+const payload = { p: 'LCC1', v: 1, g: 'game-smoke', t: 'Taula', e: '2026-01-01T00:00:00.000Z', r: 1, a: [
+  { n: 'Pep', s: 900, d: 950, b: -50, k: 3 },
+  { n: 'Pep', s: 900, d: 0, b: 900, k: 1 },
+  { n: 'Joana', s: 900, d: 0, b: 900, k: 1 }
+] };
+const value = `https://example.test/tournament.html#import=${Buffer.from(JSON.stringify(payload)).toString('base64url')}`;
 const qr = qrcode(0, 'M');
 qr.addData(value);
 qr.make();
@@ -25,4 +30,7 @@ for (let row = 0; row < modules; row += 1) {
 
 const decoded = jsQR(pixels, size, size, { inversionAttempts: 'attemptBoth' });
 assert.equal(decoded?.data, value);
+const decodedPayload = JSON.parse(Buffer.from(new URL(decoded.data).hash.slice(8), 'base64url').toString());
+assert.deepEqual(decodedPayload.a.map(player => player.n), ['Pep', 'Pep', 'Joana']);
+assert.equal(decodedPayload.a[0].b, -50);
 console.log('QR generation/decoding round-trip: ok');
