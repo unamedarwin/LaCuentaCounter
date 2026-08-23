@@ -1,6 +1,6 @@
 # Protocol QR LCC1
 
-El QR d’una taula conté un URL absolut cap a `tournament.html` amb un fragment `#import=`. El fragment és JSON codificat en UTF-8 i Base64 URL-safe. Els fragments no s’envien al servidor HTTP.
+El QR que mostra una taula conté el format compacte `LCC1:<base64url>`, amb el JSON codificat en UTF-8 i Base64 URL-safe. Això evita que un navegador o lector extern elimini el fragment de l’enllaç. El botó de compartir continua generant un URL absolut cap a `tournament.html` amb un fragment `#import=`; els fragments no s’envien al servidor HTTP.
 
 ## Esquema de càrrega útil
 
@@ -36,6 +36,6 @@ El QR d’una taula conté un URL absolut cap a `tournament.html` amb un fragmen
 
 `n` no és un identificador únic: un mateix QR pot contenir dues persones amb exactament el mateix nom. L’ordre i la resta de dades de cada element les mantenen separades; el controlador del torneig és qui resol la identitat i, si cal, crea noms visibles com `Pep 2`.
 
-El controlador valida el protocol, el nombre de participants i els camps numèrics abans d’obrir la revisió d’identitats. Un mateix `g` no es pot importar dues vegades.
+El controlador accepta tant `LCC1:<base64url>` com l’URL amb `#import=` —i, per compatibilitat defensiva, `?import=`—, i valida el protocol, el nombre de participants i els camps numèrics abans d’obrir la revisió d’identitats. Un mateix `g` no es pot importar dues vegades.
 
 La classificació general del torneig suma `b` i ordena de més a menys. Els totals idèntics comparteixen posició perquè no s’ha definit un desempat específic de torneig.
