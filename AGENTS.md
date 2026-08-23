@@ -6,5 +6,7 @@
 - Qualsevol canvi al QR ha de conservar compatibilitat amb `LCC1` o incrementar la versió i actualitzar `docs/qr-protocol.md`.
 - No incorporis recursos gràfics, logotips o art del joc sense una llicència explícita. Mantén l’atribució visible del peu de pàgina i la secció de drets del README.
 - Les dades de participants han de continuar sent locals; documenta qualsevol canvi que introdueixi xarxa o persistència remota abans d’implementar-lo.
+- No eliminis resultats quan s’apliquin descartes: marca’ls com a no computables i conserva sempre el registre original. Mantén la configuració de rondes i places de taula dins la còpia JSON.
+- Admet noms idèntics en una mateixa partida sense alterar-los al QR. Diferencia'ls visualment a la taula i, al torneig, crea sufixos per a identitats noves i exigeix una tria explícita davant múltiples coincidències.
 - En canviar els fitxers estàtics, incrementa la versió de memòria cau a `sw.js` per evitar que una instal·lació conservi recursos antics.
 - Valida com a mínim la sintaxi JavaScript, el manifest, el registre d’una ronda, la generació/lectura QR i la importació d’un resultat al torneig.

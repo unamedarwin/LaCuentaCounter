@@ -27,6 +27,23 @@
       <div class="scan-actions"><button id="open-scanner" class="button accent big" type="button">Escaneja un QR</button><label class="button pale file-button">Llegeix una imatge<input id="qr-image" type="file" accept="image/*" capture="environment"></label></div>
     </section>
 
+    <section class="tournament-config" aria-labelledby="config-title">
+      <div><p class="step">Format</p><h2 id="config-title">Configuració del torneig</h2></div>
+      <label class="field"><span>Nom del torneig</span><input id="tournament-name" type="text" maxlength="60" placeholder="Torneig de La Cuenta"></label>
+      <label class="field"><span>Rondes de torneig</span><input id="tournament-rounds" type="number" min="1" max="20" step="1" inputmode="numeric" value="3"></label>
+      <label class="field"><span>Taules per ronda</span><input id="tournament-tables" type="number" min="1" max="50" step="1" inputmode="numeric" value="2"></label>
+      <label class="field"><span>Pitjors resultats descartats</span><input id="tournament-drops" type="number" min="0" max="2" step="1" inputmode="numeric" value="0"></label>
+      <button id="create-tournament" class="button accent" type="button">Crea torneig</button>
+      <p id="format-summary" class="format-summary">3 rondes · 2 taules per ronda · compten els 3 millors resultats.</p>
+    </section>
+
+    <section id="round-control" class="panel round-control hidden" aria-labelledby="round-control-title">
+      <div class="section-heading"><div><p class="step">Taules</p><h2 id="round-control-title">Ronda de torneig 1</h2></div><button id="next-tournament-round" class="button primary" type="button">Crea la ronda següent</button></div>
+      <div id="round-tabs" class="round-tabs" aria-label="Rondes creades"></div>
+      <div id="table-slots" class="table-slots"></div>
+      <p id="round-status" class="round-status"></p>
+    </section>
+
     <section class="metric-grid" aria-label="Resum del torneig">
       <article><span>Participants</span><strong id="metric-players">0</strong></article>
       <article><span>Partides</span><strong id="metric-games">0</strong></article>
@@ -61,7 +78,9 @@
   <dialog id="import-dialog" class="import-dialog">
     <div class="dialog-heading"><div><p class="eyebrow">Revisa abans d’incorporar</p><h2 id="import-title">Resultat escanejat</h2></div><button id="cancel-import" class="icon-button" type="button" aria-label="Cancel·la">×</button></div>
     <div id="import-summary" class="import-summary"></div>
-    <p class="help-block">Per cada nom, confirma si és una persona existent o una incorporació nova. Les coincidències exactes s’han preseleccionat.</p>
+    <label class="field import-round-field"><span>Ronda del torneig</span><select id="import-round"></select></label>
+    <label class="field import-table-field"><span>Taula del torneig</span><select id="import-table"></select></label>
+    <p class="help-block">Per cada nom, confirma si és una persona existent o una incorporació nova. Les coincidències úniques es preseleccionen; si un nom pot ser més d’una persona, cal triar-la.</p>
     <form id="identity-form"><div id="identity-list" class="identity-list"></div><button class="button accent wide" type="submit">Incorpora el resultat</button></form>
   </dialog>
 

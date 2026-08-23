@@ -34,6 +34,7 @@
   let toastTimer;
   function toast(message, tone = '') { const element = document.querySelector('#toast'); if (!element) return; element.textContent = message; element.className = `toast show ${tone}`; clearTimeout(toastTimer); toastTimer = setTimeout(() => { element.className = 'toast'; }, 3200); }
   function updateDirectory(names) { const current = load(STORAGE.directory, []); const known = new Set(current.map(normalizeName)); names.forEach(name => { if (name && !known.has(normalizeName(name))) { current.push(name.trim()); known.add(normalizeName(name)); } }); save(STORAGE.directory, current.slice(-100)); }
+  async function ensurePersistentStorage() { try { if (navigator.storage?.persist) return await navigator.storage.persist(); } catch {} return false; }
   let installPrompt;
   window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); installPrompt = event; document.querySelectorAll('[data-install]').forEach(button => button.classList.remove('hidden')); });
   document.addEventListener('click', async event => { const button = event.target.closest('[data-install]'); if (!button) return; if (installPrompt) { installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; button.classList.add('hidden'); } else { toast(t(/iphone|ipad|ipod/i.test(navigator.userAgent) ? 'A iOS: Compartir → Afegeix a la pantalla d’inici.' : 'Obre el menú del navegador i tria “Instal·la l’aplicació”.')); } });
@@ -42,5 +43,5 @@
   document.querySelector('#language-select')?.addEventListener('change', event => LCCI18N.setLanguage(event.target.value));
   applyTranslations();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
-  globalThis.LCC = Object.freeze({ STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, parseResultText, renderQr, toast, updateDirectory, toBase64Url, fromBase64Url, t, applyTranslations });
+  globalThis.LCC = Object.freeze({ STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, parseResultText, renderQr, toast, updateDirectory, toBase64Url, fromBase64Url, t, applyTranslations, ensurePersistentStorage });
 })();

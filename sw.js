@@ -1,4 +1,4 @@
-const CACHE = 'la-cuenta-counter-v4';
+const CACHE = 'la-cuenta-counter-v7';
 const APP_FILES = [
   './', './index.html', './tournament.html', './styles.css', './i18n.js', './shared.js', './app.js', './tournament.js',
   './manifest.webmanifest', './vendor/qrcode.js', './vendor/jsQR.js', './icons/icon-192.png',

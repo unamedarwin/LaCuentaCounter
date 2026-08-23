@@ -34,7 +34,6 @@
   function startGame() {
     const names = [...inputs.querySelectorAll('input')].map(input => input.value.trim());
     if (names.some(name => !name)) { inputs.querySelector('input:placeholder-shown')?.focus(); toast(t('Escriu el nom de tots els participants.'), 'error'); return; }
-    if (new Set(names.map(normalizeName)).size !== names.length) { toast(t('Els noms han de ser diferents dins de la mateixa taula.'), 'error'); return; }
     if (load(STORAGE.game, null) && !confirm(t('La partida en curs se substituirà. Vols continuar?'))) return;
     const limit = STARTING_SAVINGS[names.length];
     game = { version: 1, id: uid('game'), table: $('#table-name').value.trim() || t('Taula sense número'), createdAt: new Date().toISOString(), limit, round: 1, players: names.map((name, index) => ({ id: `p${index + 1}`, name, paid: 0, handBonus: 0 })), rounds: [], cashOnHand: {} };
@@ -56,6 +55,12 @@
 
   function persistGame() { save(STORAGE.game, game); }
 
+  function displayName(player) {
+    const matches = game.players.filter(candidate => normalizeName(candidate.name) === normalizeName(player.name));
+    if (matches.length < 2) return player.name;
+    return `${player.name} (${matches.findIndex(candidate => candidate.id === player.id) + 1})`;
+  }
+
   function renderGame() {
     $('#round-number').textContent = game.round;
     $('#undo-round').disabled = !game.rounds.length;
@@ -63,9 +68,9 @@
       const remaining = compactNumber(game.limit - player.paid);
       const used = Math.min(100, (player.paid / game.limit) * 100);
       const status = remaining <= 0 ? 'broke' : used >= 75 ? 'danger' : '';
-      return `<article class="score-card ${status}"><div class="score-top"><span>${escapeHtml(player.name)}</span><em>${t('Mà')} ${5 + player.handBonus}/10</em></div><strong>${money(remaining)}</strong><small>${t('de')} ${money(game.limit)}</small><div class="meter"><i style="width:${used}%"></i></div></article>`;
+      return `<article class="score-card ${status}"><div class="score-top"><span>${escapeHtml(displayName(player))}</span><em>${t('Mà')} ${5 + player.handBonus}/10</em></div><strong>${money(remaining)}</strong><small>${t('de')} ${money(game.limit)}</small><div class="meter"><i style="width:${used}%"></i></div></article>`;
     }).join('');
-    const options = game.players.map(player => `<option value="${player.id}">${escapeHtml(player.name)}</option>`).join('');
+    const options = game.players.map(player => `<option value="${player.id}">${escapeHtml(displayName(player))}</option>`).join('');
     const currentRequester = $('#requester').value;
     $('#requester').innerHTML = options; if (currentRequester) $('#requester').value = currentRequester;
     renderDependentOptions(); renderHistory(); calculateAllocation();
@@ -75,10 +80,10 @@
     const requesterId = $('#requester').value || game.players[0].id;
     const partner = $('#half-partner');
     const oldPartner = partner.value;
-    partner.innerHTML = game.players.filter(player => player.id !== requesterId).map(player => `<option value="${player.id}">${escapeHtml(player.name)}</option>`).join('');
+    partner.innerHTML = game.players.filter(player => player.id !== requesterId).map(player => `<option value="${player.id}">${escapeHtml(displayName(player))}</option>`).join('');
     if ([...partner.options].some(option => option.value === oldPartner)) partner.value = oldPartner;
-    $('#share-players').innerHTML = game.players.map(player => `<label><input type="checkbox" value="${player.id}" ${player.id === requesterId || player.paid < game.limit ? 'checked' : ''}><span>${escapeHtml(player.name)}</span></label>`).join('');
-    $('#manual-players').innerHTML = game.players.map(player => `<label class="field"><span>${escapeHtml(player.name)}</span><div class="money-input"><input data-player-id="${player.id}" type="number" min="0" step="0.01" inputmode="decimal" value="0"><b>€</b></div></label>`).join('');
+    $('#share-players').innerHTML = game.players.map(player => `<label><input type="checkbox" value="${player.id}" ${player.id === requesterId || player.paid < game.limit ? 'checked' : ''}><span>${escapeHtml(displayName(player))}</span></label>`).join('');
+    $('#manual-players').innerHTML = game.players.map(player => `<label class="field"><span>${escapeHtml(displayName(player))}</span><div class="money-input"><input data-player-id="${player.id}" type="number" min="0" step="0.01" inputmode="decimal" value="0"><b>€</b></div></label>`).join('');
     $('#share-players').addEventListener('change', calculateAllocation, { once: true });
     $('#manual-players').addEventListener('input', calculateAllocation, { once: true });
   }
@@ -109,14 +114,14 @@
     $('#final-total').textContent = money(allocation.total);
     const preview = $('#allocation-preview');
     const entries = game.players.filter(player => allocation.charges[player.id] > 0);
-    preview.innerHTML = entries.length ? entries.map(player => `<span><b>${escapeHtml(player.name)}</b>${money(allocation.charges[player.id])}</span>`).join('') : `<span>${t('Selecciona com es reparteix el compte.')}</span>`;
+    preview.innerHTML = entries.length ? entries.map(player => `<span><b>${escapeHtml(displayName(player))}</b>${money(allocation.charges[player.id])}</span>`).join('') : `<span>${t('Selecciona com es reparteix el compte.')}</span>`;
     const warning = $('#round-warning'); const problems = [];
     if (allocation.method === 'shares' && !entries.length) problems.push(t('A patxes necessita almenys una persona seleccionada.'));
     if (allocation.method === 'manual' && Math.abs(allocation.allocated - allocation.total) > 0.009) problems.push(t('El repartiment manual suma {allocated} i ha de sumar {total}.', { allocated: money(allocation.allocated), total: money(allocation.total) }));
     const exhausted = entries.filter(player => game.limit - player.paid - allocation.charges[player.id] <= 0);
-    if (exhausted.length) problems.push(t('{players} arribarà o superarà el topall i la partida haurà acabat.', { players: exhausted.map(player => player.name).join(', ') }));
+    if (exhausted.length) problems.push(t('{players} arribarà o superarà el topall i la partida haurà acabat.', { players: exhausted.map(displayName).join(', ') }));
     const requester = game.players.find(player => player.id === allocation.requesterId);
-    if ($('#hand-increase').checked && requester?.handBonus >= 5) problems.push(t('{player} ja té el màxim de 10 cartes a la mà.', { player: requester.name }));
+    if ($('#hand-increase').checked && requester?.handBonus >= 5) problems.push(t('{player} ja té el màxim de 10 cartes a la mà.', { player: displayName(requester) }));
     warning.innerHTML = problems.map(escapeHtml).join('<br>'); warning.classList.toggle('hidden', !problems.length);
     return { allocation, invalid: !allocation.total || (allocation.method === 'shares' && !entries.length) || (allocation.method === 'manual' && Math.abs(allocation.allocated - allocation.total) > 0.009) };
   }
@@ -142,7 +147,7 @@
     if (!game.rounds.length) { container.className = 'empty-state'; container.textContent = t('Encara no s’ha registrat cap ronda.'); return; }
     container.className = 'round-list';
     container.innerHTML = [...game.rounds].reverse().map(round => {
-      const charges = game.players.filter(player => round.charges[player.id] > 0).map(player => `${escapeHtml(player.name)} · ${money(round.charges[player.id])}`).join('</span><span>');
+      const charges = game.players.filter(player => round.charges[player.id] > 0).map(player => `${escapeHtml(displayName(player))} · ${money(round.charges[player.id])}`).join('</span><span>');
       return `<article><div><em>R${round.number}</em><span><b>${methodName(round.method)}</b><small>${round.tip ? `${t('Compte')} ${money(round.bill)} + ${t('propina')} ${money(round.tip)}` : money(round.total)}</small></span></div><div class="round-charges"><span>${charges}</span></div></article>`;
     }).join('');
   }
@@ -172,11 +177,11 @@
 
   function renderFinish() {
     const payload = resultPayload(); resultUrl = createResultUrl(payload);
-    $('#final-ranking').innerHTML = [...payload.a].sort((a, b) => a.k - b.k || b.b - a.b).map(player => `<article class="rank-${player.k === 1 ? 'winner' : 'row'}"><em>${player.k}</em><span><b>${escapeHtml(player.n)}</b><small>${t('Ha pagat')} ${money(player.d)}${Number.isFinite(player.c) ? ` · ${t('porta')} ${money(player.c)}` : ''}</small></span><strong>${money(player.b)}</strong></article>`).join('');
+    $('#final-ranking').innerHTML = payload.a.map((player, index) => ({ ...player, displayName: displayName(game.players[index]) })).sort((a, b) => a.k - b.k || b.b - a.b).map(player => `<article class="rank-${player.k === 1 ? 'winner' : 'row'}"><em>${player.k}</em><span><b>${escapeHtml(player.displayName)}</b><small>${t('Ha pagat')} ${money(player.d)}${Number.isFinite(player.c) ? ` · ${t('porta')} ${money(player.c)}` : ''}</small></span><strong>${money(player.b)}</strong></article>`).join('');
     const balances = new Map(); game.players.forEach(player => { const balance = compactNumber(game.limit - player.paid); if (!balances.has(balance)) balances.set(balance, []); balances.get(balance).push(player); });
     const tied = [...balances.values()].filter(group => group.length > 1).flat();
     $('#tie-break-panel').classList.toggle('hidden', !tied.length);
-    $('#tie-break-inputs').innerHTML = tied.map(player => `<label class="field"><span>${escapeHtml(player.name)}</span><div class="money-input"><input data-cash-player="${player.id}" type="number" min="0" step="0.01" inputmode="decimal" value="${game.cashOnHand?.[player.id] ?? ''}" placeholder="0"><b>€</b></div></label>`).join('');
+    $('#tie-break-inputs').innerHTML = tied.map(player => `<label class="field"><span>${escapeHtml(displayName(player))}</span><div class="money-input"><input data-cash-player="${player.id}" type="number" min="0" step="0.01" inputmode="decimal" value="${game.cashOnHand?.[player.id] ?? ''}" placeholder="0"><b>€</b></div></label>`).join('');
     $('#share-result').dataset.resultUrl = resultUrl;
     renderQr($('#result-qr'), resultUrl);
   }
