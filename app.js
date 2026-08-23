@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const { STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, renderQr, toast, updateDirectory, t } = LCC;
+  const { STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, renderQr, toast, updateDirectory, toBase64Url, t } = LCC;
   const $ = selector => document.querySelector(selector);
   const setupView = $('#setup-view');
   const gameView = $('#game-view');
@@ -183,12 +183,15 @@
     $('#tie-break-panel').classList.toggle('hidden', !tied.length);
     $('#tie-break-inputs').innerHTML = tied.map(player => `<label class="field"><span>${escapeHtml(displayName(player))}</span><div class="money-input"><input data-cash-player="${player.id}" type="number" min="0" step="0.01" inputmode="decimal" value="${game.cashOnHand?.[player.id] ?? ''}" placeholder="0"><b>€</b></div></label>`).join('');
     $('#share-result').dataset.resultUrl = resultUrl;
-    renderQr($('#result-qr'), resultUrl);
+    const qrContainer = $('#result-qr');
+    try { renderQr(qrContainer, `LCC1:${toBase64Url(JSON.stringify(payload))}`); }
+    catch (error) { console.error('Result QR generation failed', error); qrContainer.innerHTML = `<p class="qr-error">${escapeHtml(t('No s’ha pogut dibuixar el QR. Pots compartir l’enllaç del resultat.'))}</p>`; }
   }
 
   function finishGame(automatic = false) {
     if (!game.rounds.length) { toast(t('Registra almenys una ronda abans de finalitzar.'), 'error'); return; }
-    renderFinish();
+    try { renderFinish(); }
+    catch (error) { console.error('Result preparation failed', error); toast(t('No s’ha pogut preparar el resultat. Torna-ho a provar.'), 'error'); }
     if (automatic) toast(t('Algú ha arribat o superat el topall. La partida ha acabat.'));
     finishDialog.showModal ? finishDialog.showModal() : finishDialog.setAttribute('open', '');
   }

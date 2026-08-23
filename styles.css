@@ -166,6 +166,7 @@ dialog::backdrop { background: rgba(17,28,24,.68); backdrop-filter: blur(5px); }
 .tie-break-panel p { margin: 7px 0 13px; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .qr-card { padding: 22px; border-radius: 20px; text-align: center; background: white; }
 .qr-code canvas { display: block; width: min(100%, 280px); height: auto; margin: 0 auto; image-rendering: pixelated; }
+.qr-error { min-height: 180px; margin: 0; padding: 24px; display: grid; place-items: center; border: 2px dashed var(--tomato); border-radius: 14px; color: var(--tomato-dark) !important; background: var(--paper); font-weight: 800; }
 .qr-card h3 { margin-top: 13px; }
 .qr-card p { color: var(--muted); font-size: 13px; line-height: 1.45; }
 .dialog-actions { padding: 16px clamp(24px, 5vw, 46px); display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); }
@@ -303,6 +304,7 @@ footer span:last-child { max-width: 610px; text-align: right; }
   .round-list article { display: block; }
   .round-charges { margin-top: 8px; justify-content: flex-start; }
   .dialog-actions { display: grid; }
+  .result-layout .qr-card { order: -1; }
   .metric-grid { gap: 6px; }
   .metric-grid article { padding: 14px 10px; }
   .metric-grid strong { font-size: 28px; }

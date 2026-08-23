@@ -15,8 +15,15 @@
   function createResultUrl(payload) { const url = new URL('tournament.html', location.href); url.search = ''; url.hash = `import=${toBase64Url(JSON.stringify(payload))}`; return url.toString(); }
   function parseResultText(text) {
     let payloadText = String(text || '').trim();
-    try { const url = new URL(payloadText); const hash = new URLSearchParams(url.hash.replace(/^#/, '')); payloadText = fromBase64Url(hash.get('import') || ''); }
-    catch { if (payloadText.startsWith('LCC1:')) payloadText = fromBase64Url(payloadText.slice(5)); }
+    if (payloadText.startsWith('LCC1:')) payloadText = fromBase64Url(payloadText.slice(5));
+    else {
+      try {
+        const url = new URL(payloadText); const hash = new URLSearchParams(url.hash.replace(/^#/, ''));
+        const encoded = hash.get('import') || url.searchParams.get('import');
+        if (!encoded) throw new Error(t('L’enllaç no conté cap resultat importable.'));
+        payloadText = fromBase64Url(encoded);
+      } catch (error) { if (/^[{[]/.test(payloadText)) { /* JSON directe per a proves i interoperabilitat. */ } else throw error; }
+    }
     const payload = JSON.parse(payloadText);
     if (payload?.p !== 'LCC1' || !Array.isArray(payload.a) || !payload.g) throw new Error(t('Aquest QR no és un resultat compatible.'));
     if (payload.a.length < 3 || payload.a.length > 8) throw new Error(t('El resultat ha de contenir entre 3 i 8 participants.'));
