@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f36">
+  <meta name="description" content="Controlador de torneig no oficial per reunir resultats de La Cuenta mitjançant QR.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LC Torneig">
+  <title>La Cuenta · Controlador de torneig</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="tournament" class="tournament-page">
+  <header class="topbar dark-bar">
+    <a class="brand" href="tournament.html" aria-label="Inici del torneig"><span class="brand-mark">LC</span><span><strong>La Cuenta</strong><small>Control de torneig</small></span></a>
+    <nav aria-label="Modes de l'aplicació"><a class="nav-link" href="index.html">Taula</a><a class="nav-link active" href="tournament.html" aria-current="page">Torneig</a></nav>
+    <div class="header-tools"><label class="language-picker"><span class="sr-only">Idioma</span><select id="language-select" aria-label="Idioma"><option value="ca">CA</option><option value="es">ES</option><option value="eu">EU</option><option value="gl">GL</option></select></label><button class="install-button hidden" type="button" data-install>Instal·la</button></div>
+  </header>
+
+  <main class="app-shell tournament-shell">
+    <section class="tournament-hero">
+      <div><p class="eyebrow">Múltiples taules · múltiples partides</p><h1>Control de torneig</h1><p>Escaneja els resultats finals, confirma les coincidències de noms i construeix la classificació general.</p></div>
+      <div class="scan-actions"><button id="open-scanner" class="button accent big" type="button">Escaneja un QR</button><label class="button pale file-button">Llegeix una imatge<input id="qr-image" type="file" accept="image/*" capture="environment"></label></div>
+    </section>
+
+    <section class="metric-grid" aria-label="Resum del torneig">
+      <article><span>Participants</span><strong id="metric-players">0</strong></article>
+      <article><span>Partides</span><strong id="metric-games">0</strong></article>
+      <article><span>Taules</span><strong id="metric-tables">0</strong></article>
+    </section>
+
+    <section class="panel leaderboard-panel" aria-labelledby="leaderboard-title">
+      <div class="section-heading"><div><p class="step">Classificació</p><h2 id="leaderboard-title">Resultat acumulat</h2></div><p>Guanya qui acumula més diners finals. Els empats mantenen la mateixa posició.</p></div>
+      <div id="leaderboard" class="table-wrap"></div>
+    </section>
+
+    <section class="panel games-panel" aria-labelledby="games-title">
+      <div class="section-heading"><div><p class="step">Registre</p><h2 id="games-title">Partides incorporades</h2></div><div class="toolbar"><button id="export-tournament" class="button secondary" type="button">Exporta còpia</button><label class="button secondary file-button">Importa còpia<input id="import-tournament" type="file" accept="application/json"></label></div></div>
+      <div id="games-list" class="games-list empty-state">Encara no hi ha cap resultat. Escaneja el QR d’una taula.</div>
+    </section>
+
+    <section class="panel people-panel" aria-labelledby="people-title">
+      <div class="section-heading"><div><p class="step">Identitats</p><h2 id="people-title">Participants reconeguts</h2></div><p>Pots corregir un nom o fusionar duplicats després d’una importació.</p></div>
+      <div id="people-list" class="people-list empty-state">No hi ha participants.</div>
+      <details id="merge-panel" class="merge-panel hidden"><summary>Fusiona dos participants</summary><div class="merge-form"><select id="merge-keep" aria-label="Participant que es conserva"></select><span>absorbeix</span><select id="merge-remove" aria-label="Participant duplicat"></select><button id="merge-people" class="button dark" type="button">Fusiona</button></div></details>
+    </section>
+
+    <section class="danger-zone"><button id="clear-tournament" class="text-button danger" type="button">Esborra tot el torneig d’aquest dispositiu</button></section>
+  </main>
+
+  <dialog id="scanner-dialog" class="scanner-dialog">
+    <div class="dialog-heading"><div><p class="eyebrow">Càmera</p><h2>Enquadra el QR</h2></div><button id="close-scanner" class="icon-button" type="button" aria-label="Tanca">×</button></div>
+    <div class="camera-frame"><video id="scanner-video" playsinline muted></video><div class="scan-guide"></div><canvas id="scanner-canvas" class="hidden"></canvas></div>
+    <p id="scanner-status" class="scanner-status">Preparant la càmera…</p>
+  </dialog>
+
+  <dialog id="import-dialog" class="import-dialog">
+    <div class="dialog-heading"><div><p class="eyebrow">Revisa abans d’incorporar</p><h2 id="import-title">Resultat escanejat</h2></div><button id="cancel-import" class="icon-button" type="button" aria-label="Cancel·la">×</button></div>
+    <div id="import-summary" class="import-summary"></div>
+    <p class="help-block">Per cada nom, confirma si és una persona existent o una incorporació nova. Les coincidències exactes s’han preseleccionat.</p>
+    <form id="identity-form"><div id="identity-list" class="identity-list"></div><button class="button accent wide" type="submit">Incorpora el resultat</button></form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer><span>Eina gratuïta, no oficial i sense afiliació amb 2Tomatoes Games.</span><span>La Cuenta © 2Tomatoes Games · Joc de Litus Carreras · Art original d’Ariadna Altimira. Aquesta web no reutilitza recursos gràfics del joc.</span></footer>
+  <script src="i18n.js"></script>
+  <script src="vendor/jsQR.js"></script>
+  <script src="shared.js"></script>
+  <script src="tournament.js"></script>
+</body>
+</html>

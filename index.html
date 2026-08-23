@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4ecdf">
+  <meta name="description" content="Comptador de rondes no oficial per a La Cuenta, amb resultats per QR.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="La Cuenta">
+  <title>La Cuenta · Comptador de taula</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="table">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Inici del comptador">
+      <span class="brand-mark">LC</span>
+      <span><strong>La Cuenta</strong><small>Comptador no oficial</small></span>
+    </a>
+    <nav aria-label="Modes de l'aplicació">
+      <a class="nav-link active" href="index.html" aria-current="page">Taula</a>
+      <a class="nav-link" href="tournament.html">Torneig</a>
+    </nav>
+    <div class="header-tools"><label class="language-picker"><span class="sr-only">Idioma</span><select id="language-select" aria-label="Idioma"><option value="ca">CA</option><option value="es">ES</option><option value="eu">EU</option><option value="gl">GL</option></select></label><button class="install-button hidden" type="button" data-install>Instal·la</button></div>
+  </header>
+
+  <main class="app-shell">
+    <section id="setup-view">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">Partida nova</p>
+          <h1>Qui acabarà pagant?</h1>
+          <p>Identifica els participants, registra cada compte i controla automàticament els estalvis.</p>
+        </div>
+        <div class="rule-chip" aria-label="Nombre de participants"><strong id="player-count">3</strong><span>participants</span></div>
+      </div>
+
+      <section class="panel setup-panel" aria-labelledby="setup-title">
+        <div class="section-heading">
+          <div><p class="step">01</p><h2 id="setup-title">Participants</h2></div>
+          <p>Entre 3 i 8. El límit inicial s’ajusta automàticament segons les regles.</p>
+        </div>
+        <div class="starting-limit" aria-live="polite">
+          <span>Estalvis inicials per persona</span><strong id="starting-limit">900 €</strong>
+        </div>
+        <div id="player-inputs" class="player-inputs"></div>
+        <datalist id="known-players"></datalist>
+        <label class="field table-name-field"><span>Nom o número de taula (opcional)</span><input id="table-name" type="text" maxlength="40" placeholder="Taula 1"></label>
+        <div class="setup-footer">
+          <button id="add-player" class="button secondary" type="button">+ Afegir participant</button>
+          <button id="start-game" class="button primary" type="button">Començar partida</button>
+        </div>
+        <button id="resume-game" class="resume-card hidden" type="button"><span>Hi ha una partida en curs</span><strong>Continua-la →</strong></button>
+      </section>
+    </section>
+
+    <section id="game-view" class="hidden">
+      <div class="game-hero">
+        <div><p id="game-table-name" class="eyebrow">Partida en curs</p><h1>Ronda <span id="round-number">1</span></h1></div>
+        <div class="game-actions"><button id="undo-round" class="button ghost" type="button">Desfés</button><button id="finish-game" class="button dark" type="button">Finalitza</button></div>
+      </div>
+
+      <section class="scoreboard-panel" aria-label="Marcador">
+        <div id="scoreboard" class="scoreboard"></div>
+      </section>
+
+      <section class="panel round-panel" aria-labelledby="round-title">
+        <div class="section-heading compact">
+          <div><p class="step">Compte</p><h2 id="round-title">Registra el cobrament</h2></div>
+          <p>El pagament que deixa algú a 0 € tanca la partida.</p>
+        </div>
+        <form id="round-form">
+          <div class="form-grid">
+            <label class="field"><span>Import del compte</span><div class="money-input"><input id="bill-total" type="number" min="0" step="1" inputmode="decimal" placeholder="0" required><b>€</b></div></label>
+            <label class="field"><span>Qui demana el compte?</span><select id="requester" required></select></label>
+          </div>
+
+          <fieldset class="method-picker">
+            <legend>Forma de pagament</legend>
+            <label><input type="radio" name="payment-method" value="single" checked><span><b>Una persona</b><small>Paga el compte sencer</small></span></label>
+            <label><input type="radio" name="payment-method" value="halves"><span><b>A mitges</b><small>Carta ×3 · 50% cadascú</small></span></label>
+            <label><input type="radio" name="payment-method" value="shares"><span><b>A patxes</b><small>Carta ×1 · entre els presents</small></span></label>
+            <label><input type="radio" name="payment-method" value="manual"><span><b>Manual</b><small>Qualsevol repartiment</small></span></label>
+          </fieldset>
+
+          <div id="halves-options" class="option-box hidden">
+            <label class="field"><span>Amb qui paga a mitges?</span><select id="half-partner"></select></label>
+          </div>
+          <div id="shares-options" class="option-box hidden">
+            <p class="option-title">Qui participa en el pagament?</p>
+            <p class="help">Desmarca qui sigui al lavabo o celebri l’aniversari.</p>
+            <div id="share-players" class="check-grid"></div>
+          </div>
+          <div id="manual-options" class="option-box hidden">
+            <p class="option-title">Import carregat a cada participant</p>
+            <div id="manual-players" class="manual-grid"></div>
+          </div>
+
+          <div class="special-row">
+            <label class="switch-card"><input id="tip-enabled" type="checkbox"><span><b>Propina</b><small>Carta ×6 · suma la tapa més barata</small></span></label>
+            <label id="tip-value-wrap" class="field mini hidden"><span>Tapa més barata</span><div class="money-input"><input id="tip-value" type="number" min="0" step="1" inputmode="decimal" value="20"><b>€</b></div></label>
+          </div>
+
+          <div class="allocation-box">
+            <div><span>Total final</span><strong id="final-total">0 €</strong></div>
+            <div id="allocation-preview" class="allocation-preview"><span>Introdueix un import per veure el repartiment.</span></div>
+          </div>
+          <label class="inline-check"><input id="hand-increase" type="checkbox" checked><span>El sol·licitant augmenta la seva mà en +1</span></label>
+          <div id="round-warning" class="message warning hidden" role="alert"></div>
+          <button class="button accent wide" type="submit">Registrar ronda <span aria-hidden="true">→</span></button>
+        </form>
+
+        <details class="rules-help">
+          <summary>Recordatori de cartes especials</summary>
+          <div class="rules-grid">
+            <article><b>Plat cremat ×8</b><span>Bloqueja un tipus de tapa.</span></article>
+            <article><b>Canvi de sentit ×4</b><span>Inverteix l’ordre de torn.</span></article>
+            <article><b>Premium ×4</b><span>Dobla el valor del plat jugat.</span></article>
+            <article><b>Toilette ×5</b><span>No pots ser escollit ni pagar.</span></article>
+            <article><b>Cafè ×10</b><span>Tanca les comandes habituals.</span></article>
+            <article><b>Aniversari ×1</b><span>No estàs obligat a jugar ni pagar.</span></article>
+            <article><b>A mitges ×3</b><span>El compte es divideix entre dues persones.</span></article>
+            <article><b>A patxes ×1</b><span>Es divideix entre tots els presents.</span></article>
+            <article><b>Propina ×6</b><span>S’hi suma la tapa més barata.</span></article>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel history-panel" aria-labelledby="history-title">
+        <div class="section-heading compact"><div><p class="step">Historial</p><h2 id="history-title">Rondes registrades</h2></div></div>
+        <div id="round-history" class="empty-state">Encara no s’ha registrat cap ronda.</div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="finish-dialog" class="result-dialog">
+    <form method="dialog" class="dialog-close-row"><button aria-label="Tanca">×</button></form>
+    <div class="result-layout">
+      <section>
+        <p class="eyebrow">Resultat final</p><h2>Partida acabada</h2>
+        <div id="final-ranking" class="final-ranking"></div>
+        <div id="tie-break-panel" class="tie-break-panel hidden">
+          <h3>Desempat oficial</h3>
+          <p>Si hi ha empat en estalvis, guanya qui porti més diners a sobre. Introdueix-los només per a les persones empatades.</p>
+          <div id="tie-break-inputs" class="manual-grid"></div>
+          <button id="apply-tie-break" class="button secondary wide" type="button">Aplica el desempat</button>
+        </div>
+      </section>
+      <section class="qr-card">
+        <div id="result-qr" class="qr-code" aria-label="Codi QR del resultat"></div>
+        <h3>Comparteix amb el torneig</h3>
+        <p>Escaneja aquest QR des del controlador. Inclou només la taula, els noms i els resultats finals.</p>
+        <button id="share-result" class="button primary wide" type="button">Comparteix l’enllaç</button>
+      </section>
+    </div>
+    <div class="dialog-actions"><button id="edit-finished" class="button secondary" type="button">Torna a la partida</button><button id="new-game" class="button accent" type="button">Partida nova</button></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer>
+    <span>Eina gratuïta, no oficial i sense afiliació amb 2Tomatoes Games.</span>
+    <span>La Cuenta © 2Tomatoes Games · Joc de Litus Carreras · Art original d’Ariadna Altimira. Aquesta web no reutilitza recursos gràfics del joc.</span>
+  </footer>
+  <script src="i18n.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script src="shared.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
