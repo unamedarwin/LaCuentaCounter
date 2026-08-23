@@ -5,6 +5,7 @@
 - Mantén les quatre traduccions de la interfície (`ca`, `es`, `eu`, `gl`) sincronitzades a `i18n.js`, inclosos els missatges dinàmics.
 - Qualsevol canvi al QR ha de conservar compatibilitat amb `LCC1` o incrementar la versió i actualitzar `docs/qr-protocol.md`.
 - El QR visible de final de partida usa `LCC1:<base64url>`; l’enllaç compartit usa `#import=`. El controlador ha d’acceptar tots dos formats sense dependre que un navegador preservi el fragment.
+- Mantén compatible la càrrega compacta del QR `[v,g,t,e,r,a]`, amb participants `[n,s,b,k,c?]`, i els objectes complets antics. `d` es deriva de `s − b`.
 - En pantalles de fins a 520 px, mantén el QR al principi del diàleg final; no pot quedar ocult sota la classificació sense una indicació visible.
 - No incorporis recursos gràfics, logotips o art del joc sense una llicència explícita. Mantén l’atribució visible del peu de pàgina i la secció de drets del README.
 - Les dades de participants han de continuar sent locals; documenta qualsevol canvi que introdueixi xarxa o persistència remota abans d’implementar-lo.

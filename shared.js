@@ -13,6 +13,14 @@
   function toBase64Url(value) { const bytes = new TextEncoder().encode(value); let binary = ''; bytes.forEach(byte => { binary += String.fromCharCode(byte); }); return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   function fromBase64Url(value) { const base64 = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '='); const binary = atob(base64); return new TextDecoder().decode(Uint8Array.from(binary, character => character.charCodeAt(0))); }
   function createResultUrl(payload) { const url = new URL('tournament.html', location.href); url.search = ''; url.hash = `import=${toBase64Url(JSON.stringify(payload))}`; return url.toString(); }
+  function compactResultPayload(payload) {
+    return [Number(payload.v) || 1, payload.g, payload.t, payload.e, Number(payload.r) || 0, payload.a.map(player => [player.n, Number(player.s), Number(player.b), Number(player.k), ...(player.c !== undefined && player.c !== null && Number.isFinite(Number(player.c)) ? [Number(player.c)] : [])])];
+  }
+  function expandResultPayload(payload) {
+    if (!Array.isArray(payload)) return payload;
+    const [version, gameId, table, endedAt, rounds, players] = payload;
+    return { p: 'LCC1', v: Number(version) || 1, g: gameId, t: table, e: endedAt, r: Number(rounds) || 0, a: Array.isArray(players) ? players.map(player => ({ n: player[0], s: Number(player[1]), b: Number(player[2]), d: compactNumber(Number(player[1]) - Number(player[2])), k: Number(player[3]), ...(player.length > 4 && player[4] !== null && Number.isFinite(Number(player[4])) ? { c: Number(player[4]) } : {}) })) : [] };
+  }
   function parseResultText(text) {
     let payloadText = String(text || '').trim();
     if (payloadText.startsWith('LCC1:')) payloadText = fromBase64Url(payloadText.slice(5));
@@ -24,7 +32,7 @@
         payloadText = fromBase64Url(encoded);
       } catch (error) { if (/^[{[]/.test(payloadText)) { /* JSON directe per a proves i interoperabilitat. */ } else throw error; }
     }
-    const payload = JSON.parse(payloadText);
+    const payload = expandResultPayload(JSON.parse(payloadText));
     if (payload?.p !== 'LCC1' || !Array.isArray(payload.a) || !payload.g) throw new Error(t('Aquest QR no és un resultat compatible.'));
     if (payload.a.length < 3 || payload.a.length > 8) throw new Error(t('El resultat ha de contenir entre 3 i 8 participants.'));
     payload.a.forEach(player => { if (!player.n || !Number.isFinite(Number(player.s)) || !Number.isFinite(Number(player.b))) throw new Error(t('El resultat conté dades incompletes.')); });
@@ -32,7 +40,12 @@
   }
   function renderQr(container, text) {
     if (typeof qrcode !== 'function') throw new Error(t('No s’ha pogut carregar el generador QR.'));
-    const qr = qrcode(0, 'M'); qr.addData(text); qr.make();
+    let qr = null; let lastError = null;
+    for (const correctionLevel of ['M', 'L']) {
+      try { qr = qrcode(0, correctionLevel); qr.addData(text); qr.make(); break; }
+      catch (error) { qr = null; lastError = error; }
+    }
+    if (!qr) throw new Error(String(lastError || t('No s’ha pogut carregar el generador QR.')));
     const canvas = document.createElement('canvas'); const quiet = 4; const modules = qr.getModuleCount(); const scale = Math.max(3, Math.floor(280 / (modules + quiet * 2)));
     canvas.width = canvas.height = (modules + quiet * 2) * scale; const context = canvas.getContext('2d'); context.fillStyle = '#ffffff'; context.fillRect(0, 0, canvas.width, canvas.height); context.fillStyle = '#17201c';
     for (let row = 0; row < modules; row += 1) for (let column = 0; column < modules; column += 1) if (qr.isDark(row, column)) context.fillRect((column + quiet) * scale, (row + quiet) * scale, scale, scale);
@@ -50,5 +63,5 @@
   document.querySelector('#language-select')?.addEventListener('change', event => LCCI18N.setLanguage(event.target.value));
   applyTranslations();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(() => {});
-  globalThis.LCC = Object.freeze({ STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, parseResultText, renderQr, toast, updateDirectory, toBase64Url, fromBase64Url, t, applyTranslations, ensurePersistentStorage });
+  globalThis.LCC = Object.freeze({ STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, compactResultPayload, expandResultPayload, parseResultText, renderQr, toast, updateDirectory, toBase64Url, fromBase64Url, t, applyTranslations, ensurePersistentStorage });
 })();

@@ -8,7 +8,7 @@ PWA estàtica i sense servidor per portar els comptes d’una partida de **La Cu
 - Registre per rondes amb pagament individual, **A mitges**, **A patxes**, repartiment manual i **Propina**.
 - Només es registra el cobrament final de cada ronda; no es registren cartes ni jugades individuals.
 - Saldo —també negatiu—, límit, augment de mà fins a 10 cartes, historial i opció de desfer l’última ronda.
-- Final automàtic quan algú arriba o supera el topall, classificació final, desempat oficial pels diners que es porten a sobre i QR compacte `LCC1` que no depèn dels fragments d’URL. En pantalles mòbils el QR apareix abans de la classificació perquè sigui visible immediatament.
+- Final automàtic quan algú arriba o supera el topall, classificació final, desempat oficial pels diners que es porten a sobre i QR compacte `LCC1` que no depèn dels fragments d’URL. El QR elimina camps derivables, adapta la correcció d’errors i reintenta carregar el generador local; en mòbil apareix abans de la classificació.
 - Controlador de torneig amb format configurable: rondes, nombre de taules per ronda i pitjors resultats descartats.
 - Cada ronda crea `N` places de taula. El controlador assigna cada QR a una plaça concreta i només obre la ronda següent quan totes les taules tenen resultat.
 - Detecció de noms repetits, inclosos dos noms iguals a la mateixa taula; el controlador crea sufixos com `Pep 2` i exigeix confirmació quan hi ha més d’una coincidència possible.

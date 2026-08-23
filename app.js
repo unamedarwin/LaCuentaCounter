@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const { STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, renderQr, toast, updateDirectory, toBase64Url, t } = LCC;
+  const { STORAGE, STARTING_SAVINGS, uid, load, save, escapeHtml, normalizeName, money, compactNumber, createResultUrl, compactResultPayload, renderQr, toast, updateDirectory, toBase64Url, t } = LCC;
   const $ = selector => document.querySelector(selector);
   const setupView = $('#setup-view');
   const gameView = $('#game-view');
@@ -11,6 +11,7 @@
   const finishDialog = $('#finish-dialog');
   let game = null;
   let resultUrl = '';
+  let qrLibraryRetry = null;
 
   function addPlayer(name = '') {
     if (inputs.children.length >= 8) return;
@@ -175,7 +176,18 @@
     return { p: 'LCC1', v: 1, g: game.id, t: game.table, e: new Date().toISOString(), r: game.rounds.length, a: game.players.map(player => { const cash = game.cashOnHand[player.id]; return { n: player.name, s: game.limit, d: compactNumber(player.paid), b: compactNumber(game.limit - player.paid), k: ranks.get(player.id), ...(Number.isFinite(Number(cash)) ? { c: Number(cash) } : {}) }; }) };
   }
 
-  function renderFinish() {
+  async function ensureQrGenerator() {
+    if (typeof globalThis.qrcode === 'function') return;
+    if (!qrLibraryRetry) qrLibraryRetry = new Promise((resolve, reject) => {
+      const script = document.createElement('script'); script.src = new URL('./vendor/qrcode.js', location.href).toString(); script.async = true;
+      script.onload = () => typeof globalThis.qrcode === 'function' ? resolve() : reject(new Error(t('No s’ha pogut carregar el generador QR.')));
+      script.onerror = () => reject(new Error(t('No s’ha pogut carregar el generador QR.')));
+      document.head.append(script);
+    }).catch(error => { qrLibraryRetry = null; throw error; });
+    await qrLibraryRetry;
+  }
+
+  async function renderFinish() {
     const payload = resultPayload(); resultUrl = createResultUrl(payload);
     $('#final-ranking').innerHTML = payload.a.map((player, index) => ({ ...player, displayName: displayName(game.players[index]) })).sort((a, b) => a.k - b.k || b.b - a.b).map(player => `<article class="rank-${player.k === 1 ? 'winner' : 'row'}"><em>${player.k}</em><span><b>${escapeHtml(player.displayName)}</b><small>${t('Ha pagat')} ${money(player.d)}${Number.isFinite(player.c) ? ` · ${t('porta')} ${money(player.c)}` : ''}</small></span><strong>${money(player.b)}</strong></article>`).join('');
     const balances = new Map(); game.players.forEach(player => { const balance = compactNumber(game.limit - player.paid); if (!balances.has(balance)) balances.set(balance, []); balances.get(balance).push(player); });
@@ -184,13 +196,13 @@
     $('#tie-break-inputs').innerHTML = tied.map(player => `<label class="field"><span>${escapeHtml(displayName(player))}</span><div class="money-input"><input data-cash-player="${player.id}" type="number" min="0" step="0.01" inputmode="decimal" value="${game.cashOnHand?.[player.id] ?? ''}" placeholder="0"><b>€</b></div></label>`).join('');
     $('#share-result').dataset.resultUrl = resultUrl;
     const qrContainer = $('#result-qr');
-    try { renderQr(qrContainer, `LCC1:${toBase64Url(JSON.stringify(payload))}`); }
-    catch (error) { console.error('Result QR generation failed', error); qrContainer.innerHTML = `<p class="qr-error">${escapeHtml(t('No s’ha pogut dibuixar el QR. Pots compartir l’enllaç del resultat.'))}</p>`; }
+    try { await ensureQrGenerator(); renderQr(qrContainer, `LCC1:${toBase64Url(JSON.stringify(compactResultPayload(payload)))}`); }
+    catch (error) { console.error('Result QR generation failed', error); const message = /overflow|length/i.test(String(error)) ? t('El resultat és massa gran per al QR. Escurça els noms i torna-ho a provar.') : t('No s’ha pogut dibuixar el QR. Torna a obrir l’aplicació o comparteix l’enllaç del resultat.'); qrContainer.innerHTML = `<p class="qr-error">${escapeHtml(message)}</p>`; }
   }
 
-  function finishGame(automatic = false) {
+  async function finishGame(automatic = false) {
     if (!game.rounds.length) { toast(t('Registra almenys una ronda abans de finalitzar.'), 'error'); return; }
-    try { renderFinish(); }
+    try { await renderFinish(); }
     catch (error) { console.error('Result preparation failed', error); toast(t('No s’ha pogut preparar el resultat. Torna-ho a provar.'), 'error'); }
     if (automatic) toast(t('Algú ha arribat o superat el topall. La partida ha acabat.'));
     finishDialog.showModal ? finishDialog.showModal() : finishDialog.setAttribute('open', '');
@@ -229,8 +241,8 @@
   $('#share-result').addEventListener('click', shareResult);
   $('#edit-finished').addEventListener('click', () => finishDialog.close());
   $('#new-game').addEventListener('click', newGame);
-  $('#apply-tie-break').addEventListener('click', () => { game.cashOnHand ||= {}; document.querySelectorAll('[data-cash-player]').forEach(input => { if (input.value === '') delete game.cashOnHand[input.dataset.cashPlayer]; else game.cashOnHand[input.dataset.cashPlayer] = Math.max(0, Number(input.value)); }); persistGame(); renderFinish(); toast(t('Desempat aplicat.')); });
-  window.addEventListener('lcc:languagechange', () => { refreshSetup(); if (game) { renderGame(); if (finishDialog.open) renderFinish(); } });
+  $('#apply-tie-break').addEventListener('click', async () => { game.cashOnHand ||= {}; document.querySelectorAll('[data-cash-player]').forEach(input => { if (input.value === '') delete game.cashOnHand[input.dataset.cashPlayer]; else game.cashOnHand[input.dataset.cashPlayer] = Math.max(0, Number(input.value)); }); persistGame(); await renderFinish(); toast(t('Desempat aplicat.')); });
+  window.addEventListener('lcc:languagechange', async () => { refreshSetup(); if (game) { renderGame(); if (finishDialog.open) await renderFinish(); } });
 
   const directory = load(STORAGE.directory, []);
   $('#known-players').innerHTML = directory.map(name => `<option value="${escapeHtml(name)}"></option>`).join('');
