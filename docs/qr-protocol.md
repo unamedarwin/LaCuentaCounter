@@ -34,6 +34,8 @@ El QR d’una taula conté un URL absolut cap a `tournament.html` amb un fragmen
 | `k` | Posició final; admet empats. |
 | `c` | Opcional. Diners que la persona porta a sobre, utilitzats pel desempat oficial d’una partida. |
 
+`n` no és un identificador únic: un mateix QR pot contenir dues persones amb exactament el mateix nom. L’ordre i la resta de dades de cada element les mantenen separades; el controlador del torneig és qui resol la identitat i, si cal, crea noms visibles com `Pep 2`.
+
 El controlador valida el protocol, el nombre de participants i els camps numèrics abans d’obrir la revisió d’identitats. Un mateix `g` no es pot importar dues vegades.
 
 La classificació general del torneig suma `b` i ordena de més a menys. Els totals idèntics comparteixen posició perquè no s’ha definit un desempat específic de torneig.
